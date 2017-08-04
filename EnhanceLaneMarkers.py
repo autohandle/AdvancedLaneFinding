@@ -137,9 +137,12 @@ print ("dir(PerspectiveTransform):", dir(PerspectiveTransform))
 
 def enhanceLaneMarkers(rgbImage, trimLeft=100, trimTop=0, trimBottom=0):
     undistortedAndTransformedImage=PerspectiveTransform.undistortAndTransform(rgbImage)
-    grayScaleImage=doConvertToGray(undistortedAndTransformedImage[trimTop:undistortedAndTransformedImage.shape[0]-trimBottom,trimLeft:]) 
+    croppedImage=undistortedAndTransformedImage[trimTop:undistortedAndTransformedImage.shape[0]-trimBottom,trimLeft:]
+    grayScaleImage=doConvertToGray(croppedImage) 
     sobelImage=abs_sobel_thresh(grayScaleImage, orient='x', sobel_kernel=3, thresh=(20, 255))
-    #yellowImage=channelYellow(transformedImage)
+    print("enhanceLaneMarkers-sobelImage-counts:", np.unique(sobelImage, return_counts=True), ", shape:",sobelImage.shape)
+    yellowImage=channelYellow(croppedImage)
+    print("enhanceLaneMarkers-yellowImage-counts:", np.unique(yellowImage, return_counts=True), ", shape:",yellowImage.shape)
     #p=showMaskImages.add_subplot(maskTotalImageRows, maskImageColumnCount, testImageIndex+4)
     #p.set_title("yellowImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(yellowImage, cmap='gray')
@@ -148,7 +151,12 @@ def enhanceLaneMarkers(rgbImage, trimLeft=100, trimTop=0, trimBottom=0):
     #p=showMaskImages.add_subplot(maskTotalImageRows, maskImageColumnCount, testImageIndex+5)
     #p.set_title("whiteImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(whiteImage, cmap='gray')
-    closeRegion=closeRegions(sobelImage)
+    
+    combinedImage = np.zeros_like(sobelImage)
+    combinedImage[(sobelImage == 1) | (yellowImage == 1)] = 1
+    print("enhanceLaneMarkers-combinedImage-counts:", np.unique(combinedImage, return_counts=True), ", shape:",combinedImage.shape)
+
+    closeRegion=closeRegions(combinedImage)
     return closeRegion,{"undistortedAndTransformedImage":undistortedAndTransformedImage,"grayScaleImage":grayScaleImage, "sobelImage":sobelImage, "closeRegion":closeRegion}
 
 import matplotlib.image as mpimage
