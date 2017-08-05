@@ -1,5 +1,6 @@
 import matplotlib.image as mpimage
 import EnhanceLaneMarkers
+import ProcessImage
 import cv2
 import numpy as np
 
@@ -8,6 +9,15 @@ TRIMENDINGROWS=(1./5.)
 TRIMSTARTINGCOLUMNS=(1./10.)
 
 MINPIX=50
+
+def calculateRadiusCurveInPixels(y_eval, left_fit, right_fit):
+    # Define y-value where we want radius of curvature
+    # I'll choose the maximum y-value, corresponding to the bottom of the image
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    print("ProessImage-calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    # Example values: 1926.74 1908.48
+    return left_curverad,right_curverad
 
 def locateLaneMarkerIndex(binaryImage):
     print("locateLaneMarkerIndex - binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
@@ -163,44 +173,133 @@ def processInitialImage(binaryImage):
     #p.set_title("frame: "+videoImageName+"\n("+str(visualizationImage.shape)+" - "+str(visualizationImage.dtype)+")")
     #p.imshow(visualizationImage)
     return [left_fit, right_fit], visualizationImage
-   
+
+import math
+
 MARGIN = 100
+MINPIXELCURVE = 2000
+MAXCURVEDIFFERENCE = 5000
 
 def processImage(binaryImage, left_fit, right_fit):
+    print("processImage-left_fit:", left_fit, ", right_fit:", right_fit)
     # Assume you now have a new warped binary image 
     # from the next frame of video (also called "binary_warped")
     # It's now much easier to find line pixels!
     nonzero = binaryImage.nonzero() # [y-row,x-col] that are not 0 (i.e. 1)
     nonzeroy = np.array(nonzero[0]) # only the nonzero y
-    print("processImage-nonzeroy.shape:", nonzeroy.shape, ", type:", nonzeroy.dtype)
+    #print("processImage-nonzeroy.shape:", nonzeroy.shape, ", type:", nonzeroy.dtype)
     nonzerox = np.array(nonzero[1]) # only the nonzero x
-    print("processImage-nonzerox.shape:", nonzerox.shape, ", type:", nonzerox.dtype)
-    #margin = 100
+    #print("processImage-nonzerox.shape:", nonzerox.shape, ", type:", nonzerox.dtype)
+    
+    # left lane x columns for non zero y rows from last polynomial fit
     left_laneX = left_fit[0]*nonzeroy**2 + left_fit[1]*nonzeroy + left_fit[2]
-    print("processImage-left_laneX.shape:", left_laneX.shape, ", type:", left_laneX.dtype)
-    # find x values between margins in the new frame using the old polynomial
+    #print("processImage-left_laneX.shape:", left_laneX.shape, ", type:", left_laneX.dtype)
+    # mark x values between margins in the new frame using the old polynomial as either in(true) or out(false)
     left_lane_inds = ((nonzerox > (left_laneX - MARGIN)) & (nonzerox < (left_laneX + MARGIN))) 
+    #print("processImage-left_lane_inds.shape:", left_lane_inds.shape, ", type:", left_lane_inds.dtype, ", counts:", np.unique(left_lane_inds, return_counts=True))
+    
+    # right lane x columns for non zero y rows from last polynomial fit
     right_laneX = right_fit[0]*nonzeroy**2 + right_fit[1]*nonzeroy + right_fit[2]
+    # mark x values between margins in the new frame using the old polynomial as either in(true) or out(false)
     right_lane_inds = ((nonzerox > (right_laneX - MARGIN)) & (nonzerox < (right_laneX + MARGIN)))
-    print("processImage-left_lane_inds.shape:", left_lane_inds.shape, ", type:", left_lane_inds.dtype, ", counts:", np.unique(left_lane_inds, return_counts=True))
-    print("processImage-right_lane_inds.shape:", right_lane_inds.shape, ", type:", right_lane_inds.dtype, ", counts:", np.unique(right_lane_inds, return_counts=True))
+    #print("processImage-right_lane_inds.shape:", right_lane_inds.shape, ", type:", right_lane_inds.dtype, ", counts:", np.unique(right_lane_inds, return_counts=True))
    
-
-    # extract corresponding left and right line pixel positions that fall within old 2nd order poly margin
+    # extract corresponding left and right line pixel positions that fall within (are true in left_lane_inds) old 2nd order poly margin
     leftx = nonzerox[left_lane_inds]
+    #print("processImage-leftx.shape:", leftx.shape, ", type:", leftx.dtype, ", mean:", np.mean(leftx), ", max:", np.amax(leftx), ", minimum:", np.amin(leftx), ", counts:", np.unique(leftx, return_counts=True))
     lefty = nonzeroy[left_lane_inds] 
+    #print("processImage-lefty.shape:", lefty.shape, ", type:", lefty.dtype, ", mean:", np.mean(lefty), ", max:", np.amax(lefty), ", minimum:", np.amin(lefty), ", counts:", np.unique(lefty, return_counts=True))
     rightx = nonzerox[right_lane_inds]
+    #print("processImage-rightx.shape:", rightx.shape, ", type:", rightx.dtype, ", mean:", np.mean(rightx), ", max:", np.amax(rightx), ", minimum:", np.amin(rightx), ", counts:", np.unique(rightx, return_counts=True))
     righty = nonzeroy[right_lane_inds]
+    #print("processImage-righty.shape:", righty.shape, ", type:", righty.dtype, ", mean:", np.mean(righty), ", max:", np.amax(righty), ", minimum:", np.amin(righty), ", counts:", np.unique(righty, return_counts=True))
 
-    # (re)fit a second order polynomial to each lane: left & right
-    left_fit = np.polyfit(lefty, leftx, 2)
-    right_fit = np.polyfit(righty, rightx, 2)
+    # (re)fit a second order polynomial (in pixels) to each lane : left & right
+    # leftFitForXintercept = np.polyfit(lefty, leftx, 2) # leftx = f(lefty)
+    # rightFitForXintercept = np.polyfit(righty, rightx, 2) # rightx = f(righty)
+    
+    
+    #leftFitForX = np.polyfit(leftx, lefty, 2) # lefty = f(leftx)
+    #rightFitForX = np.polyfit(righty, rightx, 2) # righty = f(rightx)
+    
+    # adjust all values to left
+    #allX = leftx
+    #allY = lefty
+    #bothLanesWithinMargin=left_lane_inds
+    # adjust right x values to left and append
+    
+    # x = 1/2a*(-b+sqrt(b**2-4ac))
+    #leftA=leftFitForX[0]
+    #leftB=leftFitForX[1]
+    #leftC=leftFitForX[2]
+    #forCount=0
+    #for i in range(1,len(leftx)):
+    #    if (lefty[i]!=0):
+    #        print("processImage-leftx["+str(i)+"]:", leftx[i], ", leftA*leftx["+str(i)+"]**2+leftB*leftx["+str(i)+"]+leftC:", (leftA*leftx[i]**2+leftB*leftx[i]+leftC), ", lefty["+str(i)+"]:", lefty[i])
+    #    forCount+=1
+    #    if (forCount>100):
+    #        break
+    #print("processImage-leftB*leftB-4.*leftA*leftC:", leftB*leftB-4.*leftA*leftC)
+    #leftInterceptX = (-leftB+math.sqrt(leftB*leftB-4.*leftA*leftC))/(2.*leftA)
+    #print("processImage-leftInterceptX:",leftInterceptX, ", ax*x+b*x+c:", str(leftA*leftInterceptX*leftInterceptX+leftB*leftInterceptX+leftC))
+    # d = -(ax*x+bx+c)
+    #rightA=rightFitForX[0]
+    #rightB=rightFitForX[1]
+    #rightC=rightFitForX[2]
+
+    #adjustRightX = rightA*leftInterceptX*leftInterceptX+rightB*leftInterceptX+rightC
+    #print("processImage-adjustRightX:",adjustRightX, ", ax*x+b*x+c-d:", str(rightA*leftInterceptX*leftInterceptX+rightB*leftInterceptX+rightC-adjustRightX))
+    
+    #allX=np.append(allX, rightx-adjustRightX)
+    #print("processImage-allX.shape:", allX.shape, ", type:", allX.dtype, ", mean:", np.mean(allX), ", max:", np.amax(allX), ", minimum:", np.amin(allX))
+    #allY=np.append(allY, righty)
+    #bothLanesWithinMargin=np.logical_or(bothLanesWithinMargin, right_lane_inds)
+    #print("processImage-bothLanesWithinMargin.shape:", bothLanesWithinMargin.shape, ", type:", bothLanesWithinMargin.dtype, ", counts:", np.unique(bothLanesWithinMargin, return_counts=True))
+    # (re)fit a second order polynomial to points from both lanes
+    #allPointFit = np.polyfit(allY, allX, 2)
+    #print("processImage-allPointFit:", allPointFit)
+    
+    # move polynomial fit for both lanes to left and right intercept
+    #left_fit=[allPointFit[0], allPointFit[1], leftFitForX[2]]
+    #right_fit=[allPointFit[0], allPointFit[1], rightFitForX[2]+adjustRightX]
+    #print("processImage-allPointFit-left_fit:", left_fit,", right_fit:", right_fit)
+
+    new_left_fit = np.polyfit(lefty, leftx, 2)
+    new_right_fit = np.polyfit(righty, rightx, 2)
+    print("processImage-new_left_fit:", new_left_fit,", new_right_fit:", new_right_fit)
+    
+    y_eval = binaryImage.shape[0]
+    left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
+    print("processVideoFrame-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    if (left_curverad > MINPIXELCURVE):
+        left_fit=new_left_fit
+    if (right_curverad > MINPIXELCURVE):
+        right_fit=new_right_fit
+    left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
+    print("processVideoFrame-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    if (math.fabs(left_curverad-right_curverad) > 5000):
+        [left_fit, right_fit], visualizationImage=ProcessImage.processInitialImage(binaryImage)
+        left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
+        print("processVideoFrame-processInitialImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    #coefficient0=(left_fit[0]+right_fit[0])/2.
+    #coefficient1=(left_fit[1]+right_fit[1])/2.
+    #left_fit = [coefficient0,coefficient1,left_fit[2]]
+    #right_fit = [coefficient0,coefficient1,right_fit[2]]
+    print("processImage-left_fit:", left_fit,", right_fit:", right_fit)
+
 
     # Create an image to draw on and an image to show the selection window
     visualizationImage = np.dstack((binaryImage, binaryImage, binaryImage))*255
     # Color in left and right line pixels
     visualizationImage[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0] # left lane pixels are red
     visualizationImage[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255] # right lane pixels are blue
+    
+    #ploty = np.linspace(0, visualizationImage.shape[0]-1, visualizationImage.shape[0] ).astype(int)
+    #left_fitx = (left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2]).astype(int) # 2nd order prediction of x from y
+    #right_fitx = (right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]).astype(int)
+
+    #visualizationImage[ploty, left_fitx] = [0, 255, 255] # both lane pixels are green
+    #visualizationImage[ploty, right_fitx] = [0, 255, 255] # both lane pixels are green
 
     return [left_fit, right_fit], visualizationImage
 

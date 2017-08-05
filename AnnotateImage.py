@@ -17,17 +17,17 @@ def calculateCarOffset(binaryImage, left_fit, right_fit):
     yAtBottom=binaryImage.shape[0]
     xLeftAtBottom=left_fit[0]*yAtBottom**2 + left_fit[1]*yAtBottom + left_fit[2]
     xRightAtBottom=right_fit[0]*yAtBottom**2 + right_fit[1]*yAtBottom + right_fit[2]
-    print ("calculateCarOffset-yAtBottom:",yAtBottom,", xLeftAtBottom:", xLeftAtBottom, ", xRightAtBottom:", xRightAtBottom)
+    #print ("calculateCarOffset-yAtBottom:",yAtBottom,", xLeftAtBottom:", xLeftAtBottom, ", xRightAtBottom:", xRightAtBottom)
     imageMidpointX=binaryImage.shape[1]//2
     laneMidpoint=xLeftAtBottom+(xRightAtBottom-xLeftAtBottom)//2
     carOffset=laneMidpoint-imageMidpointX
-    print ("calculateCarOffset-imageMidpointX:", imageMidpointX, ", laneMidpoint:", laneMidpoint, ", carOffset:", carOffset)
+    #print ("calculateCarOffset-imageMidpointX:", imageMidpointX, ", laneMidpoint:", laneMidpoint, ", carOffset:", carOffset)
     return carOffset
 
 # transformedRgbImage: 720x 1180 x3
 def fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx, fillColor=(241, 66, 244)):
-    print("fillLaneInVisualizationImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
-    print("fillLaneInVisualizationImage-ploty.shape:",ploty.shape,", left_fitx.shape:", left_fitx.shape, ", right_fitx.shape:", right_fitx.shape)
+    #print("fillLaneInVisualizationImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
+    #print("fillLaneInVisualizationImage-ploty.shape:",ploty.shape,", left_fitx.shape:", left_fitx.shape, ", right_fitx.shape:", right_fitx.shape)
     filledLaneImage=visualizationRgbImage.copy()
     # Recast the x and y points into usable format for cv2.fillPoly()
     pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
@@ -45,32 +45,31 @@ def fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_
 # visualizationImage:  720x 1180 x3
 def fillLaneInTransformImage(transformedRgbImage, visualizationRgbImage, resultImageTrim, ploty, left_fit, right_fit):
     #rgbImage=incrementalImages['undistortedAndTransformedImage'] # 720,1280,3
-    print("fillLaneInTransformImage-transformedRgbImage.shape:", transformedRgbImage.shape, ", type:", transformedRgbImage.dtype)
-    print("fillLaneInTransformImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
+    #print("fillLaneInTransformImage-transformedRgbImage.shape:", transformedRgbImage.shape, ", type:", transformedRgbImage.dtype)
+    #print("fillLaneInTransformImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2] # 2nd order prediction of x from y
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
     filledLaneImage=fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx)
-    print("fillLaneInTransformImage-filledLaneImage.shape:", filledLaneImage.shape, ", type:", filledLaneImage.dtype)
+    #print("fillLaneInTransformImage-filledLaneImage.shape:", filledLaneImage.shape, ", type:", filledLaneImage.dtype)
     overlayImage=np.zeros_like(transformedRgbImage)
-    print("fillLaneInTransformImage-overlayImage.shape:", overlayImage.shape, ", type:", overlayImage.dtype)
+    #print("fillLaneInTransformImage-overlayImage.shape:", overlayImage.shape, ", type:", overlayImage.dtype)
    
     # position smaller filledLaneImage in an overlay, so it can be combined with larger visualizationRgbImage
     trimY=resultImageTrim[1]
     trimX=resultImageTrim[0]
-    print("fillLaneInTransformImage-resultImageTrim:", resultImageTrim, ", trimX:", trimX, ", trimY:", trimY)
+    #print("fillLaneInTransformImage-resultImageTrim:", resultImageTrim, ", trimX:", trimX, ", trimY:", trimY)
     overlayImage[trimY:trimY+filledLaneImage.shape[0], trimX:trimX+filledLaneImage.shape[1]]=filledLaneImage
-    print("fillLaneInTransformImage-overlayImage.shape:", overlayImage.shape, ", type:", overlayImage.dtype)
+    #print("fillLaneInTransformImage-overlayImage.shape:", overlayImage.shape, ", type:", overlayImage.dtype)
     
     combinedImage=combineImages(overlayImage, transformedRgbImage, α=.85)
     return combinedImage
 
-def calculateRadiusCurveInPixels(y_eval, ploty, left_fit, right_fit):
+def calculateRadiusCurveInPixels(y_eval, left_fit, right_fit):
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
-    y_eval = np.max(ploty)
     left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
     right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
-    print("calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    #print("calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
     # Example values: 1926.74 1908.48
     return left_curverad,right_curverad
 
@@ -90,7 +89,7 @@ def calculateRadiusCurveInMeters(y_eval, ploty, left_fit, right_fit):
     left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
     right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
     # Now our radius of curvature is in meters
-    print("calculateRadiusCurveInMeters-left_curverad:", left_curverad, 'm, right_curverad:', right_curverad, 'm')
+    #print("calculateRadiusCurveInMeters-left_curverad:", left_curverad, 'm, right_curverad:', right_curverad, 'm')
     return left_curverad,right_curverad
 
 def createLanePolygonImage(visualizationShape, margin, ploty, left_fit, right_fit):

@@ -5,6 +5,10 @@ def doConvertToGray(rgbImage):
     #print("rgbImage.shape:", rgbImage.shape, ", type:", type(rgbImage))
     return cv2.cvtColor(rgbImage, cv2.COLOR_RGB2GRAY)
 
+def doConvertToHsv(rgbImage):
+    #print("rgbImage.shape:", rgbImage.shape, ", type:", type(rgbImage))
+    return cv2.cvtColor(rgbImage, cv2.COLOR_RGB2HSV)
+
 def abs_sobel_thresh(grayImage, orient='x', sobel_kernel=3, thresh=(0, 255)):
     if orient=='x':
         sobel = cv2.Sobel(grayImage, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
@@ -56,7 +60,22 @@ def channelGreenThreshold(rgbImage, thresh=(0, 255)):
 def channelRedThreshold(rgbImage, thresh=(0, 255)):
     return unscaledChannelThreshold(rgbImage, 0, thresh)
 
+# http://aishack.in/tutorials/tracking-colored-objects-opencv/
+# cvInRangeS(imgHSV, cvScalar(20, 100, 100), cvScalar(30, 255, 255), imgThreshed);
 def channelYellow(rgbImage):
+    hsvImage=doConvertToHsv(rgbImage)
+    hChannel=unscaledChannelThreshold(hsvImage,0,(20,30))
+    #print("channelYellow-hChannel counts:", np.unique(hChannel, return_counts=True), ", shape:",hChannel.shape)
+    sChannel=unscaledChannelThreshold(hsvImage,1,(100,255))
+    #print("channelYellow-sChannel counts:", np.unique(sChannel, return_counts=True), ", shape:",sChannel.shape)
+    vChannel=unscaledChannelThreshold(hsvImage,2,(100,255))
+    #print("channelYellow-vChannel counts:", np.unique(vChannel, return_counts=True), ", shape:",vChannel.shape)
+    channelBinary = np.zeros_like(hChannel)
+    channelBinary[(hChannel==1) & (sChannel==1) & (vChannel==1)] = 1
+    #print("channelYellow-channelBinary counts:", np.unique(channelBinary, return_counts=True), ", shape:",channelBinary.shape)
+    return channelBinary
+
+def XchannelYellow(rgbImage):
     redChannel=channelRedThreshold(rgbImage, (225,255))
     #print("channelYellow-redChannel counts:", np.unique(redChannel, return_counts=True), ", shape:",redChannel.shape)
     blueChannel=channelBlueThreshold(rgbImage, (0,175))
@@ -147,16 +166,18 @@ def enhanceLaneMarkers(rgbImage, trimLeft=100, trimTop=0, trimBottom=0):
     #p.set_title("yellowImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(yellowImage, cmap='gray')
     
-    #whiteImage=channelWhite(transformedImage)
+    whiteImage=channelWhite(croppedImage)
+    print("enhanceLaneMarkers-whiteImage-counts:", np.unique(whiteImage, return_counts=True), ", shape:",whiteImage.shape)
     #p=showMaskImages.add_subplot(maskTotalImageRows, maskImageColumnCount, testImageIndex+5)
     #p.set_title("whiteImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(whiteImage, cmap='gray')
     
     combinedImage = np.zeros_like(sobelImage)
-    combinedImage[(sobelImage == 1) | (yellowImage == 1)] = 1
+    combinedImage[(sobelImage == 1) | (yellowImage == 1) | (whiteImage == 1)] = 1
     print("enhanceLaneMarkers-combinedImage-counts:", np.unique(combinedImage, return_counts=True), ", shape:",combinedImage.shape)
 
     closeRegion=closeRegions(combinedImage)
+    print("enhanceLaneMarkers-closeRegion-counts:", np.unique(closeRegion, return_counts=True), ", shape:",closeRegion.shape)
     return closeRegion,{"undistortedAndTransformedImage":undistortedAndTransformedImage,"grayScaleImage":grayScaleImage, "sobelImage":sobelImage, "closeRegion":closeRegion}
 
 import matplotlib.image as mpimage

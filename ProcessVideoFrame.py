@@ -41,8 +41,8 @@ def processVideoFrame(videoFrame, frameNumber, left_fit, right_fit):
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
     y_eval = np.max(ploty)
-    left_curverad, right_curverad=AnnotateImage.calculateRadiusCurveInPixels(y_eval, ploty, left_fit, right_fit)
-    print("processVideoFrame-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    left_curverad_P, right_curverad_P=AnnotateImage.calculateRadiusCurveInPixels(y_eval, left_fit, right_fit)
+    print("processVideoFrame-left_curverad_P:", left_curverad_P, ", right_curverad_P:", right_curverad_P)
     # Example values: 1926.74 1908.48
     
     # For each y position generate random x position within +/-50 pix
@@ -53,9 +53,9 @@ def processVideoFrame(videoFrame, frameNumber, left_fit, right_fit):
     carOffset=AnnotateImage.calculateCarOffset(binaryImage, left_fit, right_fit)
     print ("processVideoFrame-carOffset:", carOffset)
    
-    annotateWarpedImage = lambda axes : axes.text(0., 1., ("frame: "+str(frameNumber)
-                                                           +"\nleft curve: "+str(left_curverad)+"(m)"
-                                                           +"\nright curve: "+str(right_curverad)+"(m)"
+    annotateWarpedImage = lambda axes : axes.text(0.1, 0.9, ("frame: "+str(frameNumber)
+                                                           +"\nleft curve: "+str(left_curverad)+"(m)/"+str(left_curverad_P)+"(p)"
+                                                           +"\nright curve: "+str(right_curverad)+"(m)/"+str(right_curverad_P)+"(p)"
                                                            +"\ncar offset: "+str(carOffset)
                                                           ),
                                                   fontsize=16,
