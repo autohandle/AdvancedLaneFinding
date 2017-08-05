@@ -25,7 +25,7 @@ def calculateCarOffset(binaryImage, left_fit, right_fit):
     return carOffset
 
 # transformedRgbImage: 720x 1180 x3
-def fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx, fillColor=(241, 66, 244)):
+def fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx, fillColor=(0,255,0)): # green
     #print("fillLaneInVisualizationImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
     #print("fillLaneInVisualizationImage-ploty.shape:",ploty.shape,", left_fitx.shape:", left_fitx.shape, ", right_fitx.shape:", right_fitx.shape)
     filledLaneImage=visualizationRgbImage.copy()
@@ -49,6 +49,7 @@ def fillLaneInTransformImage(transformedRgbImage, visualizationRgbImage, resultI
     #print("fillLaneInTransformImage-visualizationRgbImage.shape:", visualizationRgbImage.shape, ", type:", visualizationRgbImage.dtype)
     left_fitx = left_fit[0]*ploty**2 + left_fit[1]*ploty + left_fit[2] # 2nd order prediction of x from y
     right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
+    #filledLaneImage=fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx, fillColor=(241, 66, 244))
     filledLaneImage=fillLaneInVisualizationImage(visualizationRgbImage, ploty, left_fitx, right_fitx)
     #print("fillLaneInTransformImage-filledLaneImage.shape:", filledLaneImage.shape, ", type:", filledLaneImage.dtype)
     overlayImage=np.zeros_like(transformedRgbImage)
@@ -64,11 +65,11 @@ def fillLaneInTransformImage(transformedRgbImage, visualizationRgbImage, resultI
     combinedImage=combineImages(overlayImage, transformedRgbImage, α=.85)
     return combinedImage
 
-def calculateRadiusCurveInPixels(y_eval, left_fit, right_fit):
+def calculateRadiusCurveInPixelsSigned(y_eval, left_fit, right_fit):
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
-    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
-    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / (2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / (2*right_fit[0])
     #print("calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
     # Example values: 1926.74 1908.48
     return left_curverad,right_curverad

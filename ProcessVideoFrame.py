@@ -17,7 +17,7 @@ MARGIN=100
 def processVideoFrame(videoFrame, frameNumber, left_fit, right_fit):
     print("processVideoFrame-frameNumber: ",frameNumber, ", videoFrame.shape:", videoFrame.shape, ", type:", videoFrame.dtype)
     binaryImage,incrementalImages=EnhanceLaneMarkers.enhanceLaneMarkers(videoFrame, trimLeft=TRIMLEFT, trimTop=TRIMTOP, trimBottom=TRIMBOTTOM)
-    print("processVideoFrame-frameNumber: ",frameNumber, ", binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
+    #print("processVideoFrame-frameNumber: ",frameNumber, ", binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
     
     if frameNumber==0:
         [left_fit, right_fit], visualizationImage=ProcessImage.processInitialImage(binaryImage)
@@ -28,21 +28,21 @@ def processVideoFrame(videoFrame, frameNumber, left_fit, right_fit):
     ploty = np.linspace(0, binaryImage.shape[0]-1, binaryImage.shape[0] )
  
     lanePolygonImage=AnnotateImage.createLanePolygonImage(visualizationImage.shape, MARGIN, ploty, left_fit, right_fit)
-    print("processVideoFrame-visualizationImage.shape:", visualizationImage.shape, ", type:", visualizationImage.dtype)
-    print("processVideoFrame-lanePolygonImage.shape:", lanePolygonImage.shape, ", type:", lanePolygonImage.dtype)
+    #print("processVideoFrame-visualizationImage.shape:", visualizationImage.shape, ", type:", visualizationImage.dtype)
+    #print("processVideoFrame-lanePolygonImage.shape:", lanePolygonImage.shape, ", type:", lanePolygonImage.dtype)
     annotatedVisualizationImage = cv2.addWeighted(visualizationImage, 1, lanePolygonImage, 0.3, 0) # combine the 2 images
-    print("processVideoFrame-annotatedVisualizationImage.shape:", annotatedVisualizationImage.shape, ", type:", annotatedVisualizationImage.dtype)
+    #print("processVideoFrame-annotatedVisualizationImage.shape:", annotatedVisualizationImage.shape, ", type:", annotatedVisualizationImage.dtype)
     
     transformedImage=incrementalImages['undistortedAndTransformedImage'] # 720,1280
-    print("processVideoFrame-transformedImage.shape:", transformedImage.shape, ", type:", transformedImage.dtype)
+    #print("processVideoFrame-transformedImage.shape:", transformedImage.shape, ", type:", transformedImage.dtype)
    
     filledLaneWarpedImage=AnnotateImage.fillLaneInTransformImage(transformedImage, visualizationImage, (TRIMLEFT,TRIMTOP), ploty, left_fit, right_fit)
     
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
     y_eval = np.max(ploty)
-    left_curverad_P, right_curverad_P=AnnotateImage.calculateRadiusCurveInPixels(y_eval, left_fit, right_fit)
-    print("processVideoFrame-left_curverad_P:", left_curverad_P, ", right_curverad_P:", right_curverad_P)
+    left_curverad_P, right_curverad_P=AnnotateImage.calculateRadiusCurveInPixelsSigned(y_eval, left_fit, right_fit)
+    #print("processVideoFrame-left_curverad_P:", left_curverad_P, ", right_curverad_P:", right_curverad_P)
     # Example values: 1926.74 1908.48
     
     # For each y position generate random x position within +/-50 pix
@@ -51,12 +51,15 @@ def processVideoFrame(videoFrame, frameNumber, left_fit, right_fit):
     # Example values: 632.1 m    626.2 m
     
     carOffset=AnnotateImage.calculateCarOffset(binaryImage, left_fit, right_fit)
-    print ("processVideoFrame-carOffset:", carOffset)
+    #print ("processVideoFrame-carOffset:", carOffset)
    
+    leftCurveAnnotation="left curve: %.2f(m)/%.2f(p)" % (left_curverad,left_curverad_P)
+    rightCurveAnnotation="right curve: %.2f(m)/%.2f(p)" % (right_curverad,right_curverad_P)
+    carOffsetAnnotation="car offset: %.2f(p)" % (carOffset)
     annotateWarpedImage = lambda axes : axes.text(0.1, 0.9, ("frame: "+str(frameNumber)
-                                                           +"\nleft curve: "+str(left_curverad)+"(m)/"+str(left_curverad_P)+"(p)"
-                                                           +"\nright curve: "+str(right_curverad)+"(m)/"+str(right_curverad_P)+"(p)"
-                                                           +"\ncar offset: "+str(carOffset)
+                                                           +"\n"+leftCurveAnnotation
+                                                           +"\n"+rightCurveAnnotation
+                                                           +"\n"+carOffsetAnnotation
                                                           ),
                                                   fontsize=16,
                                                   horizontalalignment='left',

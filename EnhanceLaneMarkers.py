@@ -159,25 +159,25 @@ def enhanceLaneMarkers(rgbImage, trimLeft=100, trimTop=0, trimBottom=0):
     croppedImage=undistortedAndTransformedImage[trimTop:undistortedAndTransformedImage.shape[0]-trimBottom,trimLeft:]
     grayScaleImage=doConvertToGray(croppedImage) 
     sobelImage=abs_sobel_thresh(grayScaleImage, orient='x', sobel_kernel=3, thresh=(20, 255))
-    print("enhanceLaneMarkers-sobelImage-counts:", np.unique(sobelImage, return_counts=True), ", shape:",sobelImage.shape)
+    #print("enhanceLaneMarkers-sobelImage-counts:", np.unique(sobelImage, return_counts=True), ", shape:",sobelImage.shape)
     yellowImage=channelYellow(croppedImage)
-    print("enhanceLaneMarkers-yellowImage-counts:", np.unique(yellowImage, return_counts=True), ", shape:",yellowImage.shape)
+    #print("enhanceLaneMarkers-yellowImage-counts:", np.unique(yellowImage, return_counts=True), ", shape:",yellowImage.shape)
     #p=showMaskImages.add_subplot(maskTotalImageRows, maskImageColumnCount, testImageIndex+4)
     #p.set_title("yellowImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(yellowImage, cmap='gray')
     
     whiteImage=channelWhite(croppedImage)
-    print("enhanceLaneMarkers-whiteImage-counts:", np.unique(whiteImage, return_counts=True), ", shape:",whiteImage.shape)
+    #print("enhanceLaneMarkers-whiteImage-counts:", np.unique(whiteImage, return_counts=True), ", shape:",whiteImage.shape)
     #p=showMaskImages.add_subplot(maskTotalImageRows, maskImageColumnCount, testImageIndex+5)
     #p.set_title("whiteImage ("+str(sobelImage.shape[0])+"x"+str(sobelImage.shape[1])+")")
     #p.imshow(whiteImage, cmap='gray')
     
     combinedImage = np.zeros_like(sobelImage)
     combinedImage[(sobelImage == 1) | (yellowImage == 1) | (whiteImage == 1)] = 1
-    print("enhanceLaneMarkers-combinedImage-counts:", np.unique(combinedImage, return_counts=True), ", shape:",combinedImage.shape)
+    #print("enhanceLaneMarkers-combinedImage-counts:", np.unique(combinedImage, return_counts=True), ", shape:",combinedImage.shape)
 
     closeRegion=closeRegions(combinedImage)
-    print("enhanceLaneMarkers-closeRegion-counts:", np.unique(closeRegion, return_counts=True), ", shape:",closeRegion.shape)
+    #print("enhanceLaneMarkers-closeRegion-counts:", np.unique(closeRegion, return_counts=True), ", shape:",closeRegion.shape)
     return closeRegion,{"undistortedAndTransformedImage":undistortedAndTransformedImage,"grayScaleImage":grayScaleImage, "sobelImage":sobelImage, "closeRegion":closeRegion}
 
 import matplotlib.image as mpimage

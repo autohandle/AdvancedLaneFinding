@@ -10,30 +10,30 @@ TRIMSTARTINGCOLUMNS=(1./10.)
 
 MINPIX=50
 
-def calculateRadiusCurveInPixels(y_eval, left_fit, right_fit):
+def calculateRadiusCurveInPixelsSigned(y_eval, left_fit, right_fit):
     # Define y-value where we want radius of curvature
     # I'll choose the maximum y-value, corresponding to the bottom of the image
-    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / np.absolute(2*left_fit[0])
-    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / np.absolute(2*right_fit[0])
-    print("ProessImage-calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    left_curverad = ((1 + (2*left_fit[0]*y_eval + left_fit[1])**2)**1.5) / (2*left_fit[0])
+    right_curverad = ((1 + (2*right_fit[0]*y_eval + right_fit[1])**2)**1.5) / (2*right_fit[0])
+    #print("ProcessImage-calculateRadiusCurveInPixels-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
     # Example values: 1926.74 1908.48
     return left_curverad,right_curverad
 
 def locateLaneMarkerIndex(binaryImage):
-    print("locateLaneMarkerIndex - binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
+    #print("locateLaneMarkerIndex - binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
     startingInRow=int(binaryImage.shape[0]*TRIMSTARTINGROWS)
     endingInRow=int(binaryImage.shape[0]-binaryImage.shape[0]*TRIMENDINGROWS)
     startingInColumn=int(binaryImage.shape[1]*TRIMSTARTINGCOLUMNS)
-    print("locateLaneMarkerIndex - startingInRow: ",startingInRow, ", startingInColumn:", startingInColumn, ", endingInRow:", endingInRow)
+    #print("locateLaneMarkerIndex - startingInRow: ",startingInRow, ", startingInColumn:", startingInColumn, ", endingInRow:", endingInRow)
     
     croppedBinaryImage=binaryImage[startingInRow:endingInRow,startingInColumn:]
-    print("locateLaneMarkerIndex - croppedBinaryImage.shape:", croppedBinaryImage.shape, ", type:", croppedBinaryImage.dtype)
+    #print("locateLaneMarkerIndex - croppedBinaryImage.shape:", croppedBinaryImage.shape, ", type:", croppedBinaryImage.dtype)
     #croppedBinaryImages[binaryImageName]=croppedBinaryImage
        
     histogram = np.sum(croppedBinaryImage, axis=0)
     #histograms[binaryImageName]=histogram
     alignedHistogram = np.zeros(binaryImage.shape[1], dtype=histogram.dtype)
-    print("locateLaneMarkerIndex - histogram.shape: ",histogram.shape, ", alignedHistogram.shape:", alignedHistogram.shape, ", type:", alignedHistogram.dtype)
+    #print("locateLaneMarkerIndex - histogram.shape: ",histogram.shape, ", alignedHistogram.shape:", alignedHistogram.shape, ", type:", alignedHistogram.dtype)
     alignedHistogram[startingInColumn:startingInColumn+histogram.shape[0]]=histogram
     
     # Find the peak of the left and right halves of the histogram
@@ -42,7 +42,7 @@ def locateLaneMarkerIndex(binaryImage):
     midpoint = np.int(alignedHistogram.shape[0]/2)
     leftx_base = np.argmax(alignedHistogram[:midpoint])
     rightx_base = np.argmax(alignedHistogram[midpoint:]) + midpoint
-    print("locateLaneMarkerIndex - leftx_base:", leftx_base, ", rightx_base:", rightx_base)
+    #print("locateLaneMarkerIndex - leftx_base:", leftx_base, ", rightx_base:", rightx_base)
     
     return [leftx_base, rightx_base], alignedHistogram
 
@@ -74,7 +74,7 @@ def initializeSlidingWindows(binaryImage):
     #midpoint = np.int(histogram.shape[0]/2)
     #leftx_base = np.argmax(histogram[:midpoint])
     #rightx_base = np.argmax(histogram[midpoint:]) + midpoint
-    print("initializeSlidingWindows-leftx_base:", leftx_base, ", rightx_base:", rightx_base)
+    #print("initializeSlidingWindows-leftx_base:", leftx_base, ", rightx_base:", rightx_base)
     
     # Current positions to be updated for each window
     leftx_current = leftx_base
@@ -84,7 +84,7 @@ def initializeSlidingWindows(binaryImage):
     white = binaryImage.nonzero()
     whiteY = np.array(white[0])
     whiteX = np.array(white[1])
-    print("total pixels:", binaryImage.shape[0]*binaryImage.shape[1], ", whiteX:", len(whiteX), ", whiteY:", len(whiteY))
+    #print("total pixels:", binaryImage.shape[0]*binaryImage.shape[1], ", whiteX:", len(whiteX), ", whiteY:", len(whiteY))
 
     # Current positions to be updated for each window
     leftx_current = leftx_base
@@ -103,12 +103,12 @@ def initializeSlidingWindows(binaryImage):
     nwindows = 9
     # Set height of windows
     window_height = np.int(binaryImage.shape[0]/nwindows)
-    print("initializeSlidingWindows-nwindows: ",nwindows, ", window_height:", window_height)
+    #print("initializeSlidingWindows-nwindows: ",nwindows, ", window_height:", window_height)
 
-    print("initializeSlidingWindows-binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
+    #print("initializeSlidingWindows-binaryImage.shape:", binaryImage.shape, ", type:", binaryImage.dtype)
     visualizationImage = np.dstack((binaryImage, binaryImage, binaryImage))*255
     #visualizationImage = croppedTestImages[testImageName]
-    print("initializeSlidingWindows-visualizationImage.shape:", visualizationImage.shape, ", type:", visualizationImage.dtype)
+    #print("initializeSlidingWindows-visualizationImage.shape:", visualizationImage.shape, ", type:", visualizationImage.dtype)
 
     # Step through the windows one by one
     for window in range(nwindows):
@@ -123,10 +123,10 @@ def initializeSlidingWindows(binaryImage):
         # Draw the windows on the visualization image
         cv2.rectangle(visualizationImage,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),(0,255,0), 2) 
         cv2.rectangle(visualizationImage,(win_xright_low,win_y_low),(win_xright_high,win_y_high),(0,255,0), 2) 
-        print("window: ",window, ", window.shape: (",
-              win_xleft_low,",",win_xleft_high,"),(",
-              win_xright_low,",", win_xright_high, ") x (",
-              win_y_low, ",", win_y_high, ")")
+        #print("window: ",window, ", window.shape: (",
+        #      win_xleft_low,",",win_xleft_high,"),(",
+        #      win_xright_low,",", win_xright_high, ") x (",
+        #      win_y_low, ",", win_y_high, ")")
 
         # Identify the nonzero pixels in x and y within the window
         good_left_inds = ((whiteY >= win_y_low) & (whiteY < win_y_high)
@@ -177,8 +177,8 @@ def processInitialImage(binaryImage):
 import math
 
 MARGIN = 100
-MINPIXELCURVE = 2000
-MAXCURVEDIFFERENCE = 5000
+MINPIXELCURVE = 1200 # otherwise, keep the old fit
+MINCURVEDRATIO = .5 # otherwise, (re)initialize
 
 def processImage(binaryImage, left_fit, right_fit):
     print("processImage-left_fit:", left_fit, ", right_fit:", right_fit)
@@ -266,21 +266,28 @@ def processImage(binaryImage, left_fit, right_fit):
 
     new_left_fit = np.polyfit(lefty, leftx, 2)
     new_right_fit = np.polyfit(righty, rightx, 2)
-    print("processImage-new_left_fit:", new_left_fit,", new_right_fit:", new_right_fit)
+    #print("processImage-new_left_fit:", new_left_fit,", new_right_fit:", new_right_fit)
     
     y_eval = binaryImage.shape[0]
-    left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
-    print("processVideoFrame-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
-    if (left_curverad > MINPIXELCURVE):
+    left_curverad, right_curverad=calculateRadiusCurveInPixelsSigned(y_eval, new_left_fit, new_right_fit)
+    #print("processImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    if (math.fabs(left_curverad) > MINPIXELCURVE):
         left_fit=new_left_fit
-    if (right_curverad > MINPIXELCURVE):
+    if (math.fabs(right_curverad) > MINPIXELCURVE):
         right_fit=new_right_fit
-    left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
-    print("processVideoFrame-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
-    if (math.fabs(left_curverad-right_curverad) > 5000):
+    left_curverad, right_curverad=calculateRadiusCurveInPixelsSigned(y_eval, new_left_fit, new_right_fit)
+    #print("processImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+    maxCurve=max(left_curverad,right_curverad)
+    minCurve=min(left_curverad,right_curverad)
+    curvedDifferently=(math.fabs(minCurve/maxCurve) < MINCURVEDRATIO)
+    leftTooSmall=(math.fabs(left_curverad) < MINPIXELCURVE) # even with new fit, curve is still too tight
+    rightTooSmall=(math.fabs(right_curverad) < MINPIXELCURVE) # even with new fit, curve is still too tight
+    if (curvedDifferently or leftTooSmall or rightTooSmall):
+        print("processImage-processInitialImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+        print("processImage-processInitialImage-curvedDifferently:", curvedDifferently, ", leftTooSmall:", leftTooSmall, ", rightTooSmall:", rightTooSmall)
         [left_fit, right_fit], visualizationImage=ProcessImage.processInitialImage(binaryImage)
-        left_curverad, right_curverad=calculateRadiusCurveInPixels(y_eval, new_left_fit, new_right_fit)
-        print("processVideoFrame-processInitialImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
+        left_curverad, right_curverad=calculateRadiusCurveInPixelsSigned(y_eval, left_fit, right_fit)
+        print("processImage-processInitialImage-left_curverad:", left_curverad, ", right_curverad:", right_curverad)
     #coefficient0=(left_fit[0]+right_fit[0])/2.
     #coefficient1=(left_fit[1]+right_fit[1])/2.
     #left_fit = [coefficient0,coefficient1,left_fit[2]]

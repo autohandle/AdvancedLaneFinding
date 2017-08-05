@@ -47,10 +47,10 @@ def process_image(videoFrame):
     return convertFigureToImage(figure)
 
 
-def processChallengeVideo():
+def processProjectVideo():
     CHALLENGEVIDEOOUTPUT = 'test_videos_output/ChallengeVideoOutput%04d.mp4'
-    PROJECTVIDEOOUTPUT = 'test_videos_output/ProjectVideoOutput%04d.mp4'
-    CLIPLENGTH=10 # seconds
+    PROJECTVIDEOOUTPUT = 'test_videos_output/ProjectVideoOutput_%04d-%04d.mp4'
+    CLIPLENGTH=10 # process 10 second clips
     ## To speed up the testing process you may want to try your pipeline on a shorter subclip of the video
     ## To do so add .subclip(start_second,end_second) to the end of the line below
     ## Where start_second and end_second are integer values representing the start and end of the subclip
@@ -61,13 +61,13 @@ def processChallengeVideo():
     duration=31.4
     numberOfClips=math.ceil(duration/float(CLIPLENGTH))
     print ("processChallengeVideo-duration:", duration, ", CLIPLENGTH:", CLIPLENGTH, ", numberOfClips:", numberOfClips)
-    for clipNumber in range(2, numberOfClips): # process 10 second clips
+    for clipNumber in range(2, numberOfClips): # 
         clipStart=clipNumber*CLIPLENGTH
         clipStop=min((clipNumber+1)*CLIPLENGTH,duration)
         print ("processChallengeVideo-clipNumber:", clipNumber, ", clipStart:", clipStart, ", clipStop:", clipStop)
         videoClip = video.subclip(clipStart,clipStop)
         annotatedClip = videoClip.fl_image(process_image)
-        videoFileName=PROJECTVIDEOOUTPUT % (clipNumber)
+        videoFileName=PROJECTVIDEOOUTPUT % (clipStart,clipStop)
         print ("processChallengeVideo-videoFileName:", videoFileName)
         annotatedClip.write_videofile(videoFileName, audio=False)
 
@@ -83,4 +83,4 @@ def testProcessImage():
     plt.show()
 
 #testProcessImage()
-processChallengeVideo()
+processProjectVideo()
