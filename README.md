@@ -1,10 +1,11 @@
+<!---
 ## Writeup Template
 
 ### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
 
 ---
-
-**Advanced Lane Finding Project**
+-->
+# Advanced Lane Finding Project**
 
 The goals / steps of this project are the following:
 
@@ -17,7 +18,8 @@ The goals / steps of this project are the following:
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
 
-[//]: # (Image References)
+<!---
+# (Image References)
 
 [image1]: ./examples/undistort_output.png "Undistorted"
 [image2]: ./test_images/test1.jpg "Road Transformed"
@@ -26,7 +28,7 @@ The goals / steps of this project are the following:
 [image5]: ./examples/color_fit_lines.jpg "Fit Visual"
 [image6]: ./examples/example_output.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
-
+-->
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -271,7 +273,7 @@ Your pipeline should perform reasonably well on the entire project video (wobbly
 The project video is processed a frame at a time in 10 second intervals in [ProcessProjectVideo.py](./ProcessProjectVideo.py)
 which has the `processImage` routine used by the video clip processor
                                                                             
-Videos                                                                           
+#### 2. Videos                                                                           
 - normal [![Watch the video](./images/Driving.png)](http://www.autohandle.com/video/Driving.mp4)
 - smaller [![Watch a smaller video](./images/DrivingSmaller.png)](http://www.autohandle.com/video/DrivingSmaller.mp4)
 
